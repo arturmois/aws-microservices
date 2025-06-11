@@ -1,3 +1,5 @@
+import '@opentelemetry/auto-instrumentations-node/register'
+
 import { fastify } from 'fastify'
 import { fastifyCors } from '@fastify/cors'
 import { z } from 'zod'
@@ -9,6 +11,9 @@ import {
 import { prisma } from '../db/client.ts'
 import { dispatchOrderCreatedMessage } from '../broker/messages/order-created.ts'
 import { randomUUID } from 'node:crypto'
+import { trace } from '@opentelemetry/api'
+import { setTimeout } from 'node:timers/promises'
+import { tracer } from '../tracer/tracer.ts'
 
 const app = fastify().withTypeProvider<ZodTypeProvider>()
 app.register(fastifyCors, {
@@ -31,7 +36,13 @@ app.post('/orders', {
 }, async (request, reply) => {
   const { amount } = request.body
   const orderId = randomUUID()
-  await dispatchOrderCreatedMessage({
+
+  const span = tracer.startSpan('create-order')
+  span.setAttribute('orderId', orderId)
+  await setTimeout(2000)
+  span.end()
+
+  dispatchOrderCreatedMessage({
     orderId,
     amount,
     customer: {
