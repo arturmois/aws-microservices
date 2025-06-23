@@ -1,9 +1,11 @@
-import * as pulumi from "@pulumi/pulumi";
-import * as aws from "@pulumi/aws";
-import * as awsx from "@pulumi/awsx";
+import * as pulumi from '@pulumi/pulumi'
 
-// Create an AWS resource (S3 Bucket)
-const bucket = new aws.s3.BucketV2("my-bucket");
+import { appLoadBalancer } from './src/load-balancer'
+import { ordersService } from './src/services/orders'
+import { rabbitMQService } from './src/services/rabbitmq'
+import { kongService } from './src/services/kong'
 
-// Export the name of the bucket
-export const bucketName = bucket.id;
+export const ordersId = ordersService.service.id
+export const rabbitMQId = rabbitMQService.service.id
+export const kongId = kongService.service.id
+export const rabbitMQAdminUrl = pulumi.interpolate`http://${appLoadBalancer.listeners[0].endpoint.hostname}:15672`
